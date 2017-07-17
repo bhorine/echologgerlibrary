@@ -1,40 +1,93 @@
+/* 
+ *  MsgData.cpp 
+ *    Parses the data coming from the EchoLogger sonar
+ *
+ */
 
+#include <cstring> // for memcpy
+#include <cstdint>
+#include <iostream>
 
 #include "MsgData.h"
-#include <cstring> // for memcpy
 
 namespace elcc {
-MsgData::MsgData(uint8* received_packet_ptr) //should this be void? because the next two are void
+using namespace std;
+
+/* Constructor */
+MsgData::MsgData(uint8_t* received_packet_ptr) 
 {
 	   m_rx_pkt_ptr = received_packet_ptr;
 }
 
-void MsgData::ParseHeader(uint32* rx_pkt, uint16* length)
+void MsgData::ParseHeader()
 {
-	memcpy(header, rx_pkt, HEADER_LENGTH);
-	data_offset = *((uint32*)m_rx_pkt_ptr + DATAOFFSET);
-	samplesnum = *((uint32*)m_rx_pkt_ptr + SAMPLESNUM);
+//	m_data_offset = *(uint32_t *)(m_rx_pkt_ptr + DATAOFFSET); // points to the location of the beginning of the data payload
+	m_data_offset = m_rx_pkt_ptr[DATA_OFFSET];
+	m_data_offset |= m_rx_pkt_ptr[DATA_OFFSET - 1] << 1*8;
+	m_data_offset |= m_rx_pkt_ptr[DATA_OFFSET - 2] << 2*8;
+	m_data_offset |= m_rx_pkt_ptr[DATA_OFFSET - 3] << 3*8;
+	m_samplesnum = *(m_rx_pkt_ptr + SAMPLESNUM);  // Number of samples in the data payload
+	m_samplesnum |= *(m_rx_pkt_ptr + SAMPLESNUM - 1) << 1*8;
+	m_samplesnum |= *(m_rx_pkt_ptr + SAMPLESNUM - 2) << 2*8;
+	m_samplesnum |= *(m_rx_pkt_ptr + SAMPLESNUM - 3) << 3*8;
+
 
 }
 
-void MsgData::GetData(uint32* data_received, uint32* rx_pkt)
+uint32_t MsgData::GetDataLength()
 {
-	angle = getAngle();
-	for (unsigned int i=data_offset; i<samplesnum + data_offset; i++)
+  return m_samplesnum;
+}
+
+void MsgData::GetData(uint16_t* data_received, uint32_t received_buf_size)
+{
+	uint32_t max_sample = m_samplesnum;
+	if (received_buf_size < m_samplesnum) {
+		cerr << "Received buffer size is too small. Some data is missing." << endl;
+		max_sample = received_buf_size;
+	}
+	//angle = GetAngle(); // This is the angle at which the data is collected
+	cout << "Getting data from " << m_data_offset << " to " << max_sample + m_data_offset << endl;
+	cout << std::dec;
+	for (uint16_t i=m_data_offset; i<max_sample + m_data_offset; i++)
 	{
-		data_received[i] = uncompand8to12(rx_pkt[i]);
+	  cout << i << " " << +m_rx_pkt_ptr[i];
+		data_received[i] = Uncompand8to12(m_rx_pkt_ptr[i]);
+	  cout << " ...  " << +data_received[i] << endl;
 	}
 }
 
-double MsgData::getAngle() {
-  uint32 raw_angle = (uint32)(*(header + ANGLE));
-  double angle = ((double)raw_angle)*360.0/28800.0;
+/* Extracts the angle at which the data was gathered */
+double MsgData::GetAngle() {
+
+//  uint32_t raw_angle = (uint32_t)(*(m_rx_pkt_ptr + ANGLE)); // Extract the angle from the header
+  uint32_t raw_angle = 0;
+  uint8_t angle_byte = 0;
+  angle_byte = *(m_rx_pkt_ptr + ANGLE);
+  cout << "Raw angle LSB " << (int)angle_byte << endl;
+  raw_angle = angle_byte;
+  angle_byte = *(m_rx_pkt_ptr + ANGLE - 1);
+  cout << "Raw angle byte 1 " << (int)angle_byte << endl;
+  raw_angle += angle_byte << 8;
+  angle_byte = *(m_rx_pkt_ptr + ANGLE - 2);
+  cout << "Raw angle byte 2 " << (int)angle_byte << endl;
+  raw_angle += angle_byte << 16;
+  angle_byte = *(m_rx_pkt_ptr + ANGLE - 3);
+  cout << "Raw angle byte MSB " << (int)angle_byte << endl;
+  raw_angle += angle_byte << 24;
+  
+cout << "Raw angle is " << raw_angle << endl;
+  double angle = ((double)raw_angle)*360.0/28800.0; // Convert from raw to world units
   return angle;
 }
 
-unsigned short MsgData::uncompand8to12(unsigned char b) 
+/* Uncompand the data. Companding is used by the EchoLogger sonar to compress the data
+ * based upon ignoring some dynamic range at large signal levels. This allows the data
+ * to be transmitted in bytes instead of half-words. 
+ */
+uint16_t MsgData::Uncompand8to12(unsigned char b) 
 { 
-  unsigned short ret = (unsigned short) b ; 
+  uint16_t ret = (uint16_t) b ; 
   
   ret = ( (b >> 5) == 7 ) ? ( (ret & 0x1F) << 6 ) | (1 << 11) | (1 << 5) : 
 	  ( (b >> 5) == 6 ) ? ( (ret & 0x1F) << 5 ) | (1 << 10) | (1 << 4) : 

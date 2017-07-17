@@ -1,38 +1,35 @@
 #pragma once
-#include "eldatatypes.h"
 
 namespace elcc {
 class MsgData {
 // static constants
 	public:
-		static const unsigned int DATAOFFSET = 4;
-		static const unsigned int SAMPLESNUM = 12;
-		static const unsigned int ANGLE = 20;
-		static const unsigned int COMMANDID = 24;
+		static const unsigned int DATA_OFFSET = 7;
+		static const unsigned int SAMPLESNUM = 15;
+		static const unsigned int ANGLE = 23;
+		static const unsigned int COMMANDID = 27;
 		static const unsigned int HEADER_LENGTH = 7;
 
 // member variables
 public:
 
-  byte* m_rx_pkt_ptr;
-  uint32* data_received;
-  uint32* header;
-  uint32 data_offset;
-  uint32 samplesnum;
-  uint32 angle;
-  uint32 commandid;
-  uint16* length;
-  uint8* received_packet_ptr;
-  uint32* rx_pkt;
+  uint8_t* m_rx_pkt_ptr;
+  uint16_t* data_received;
+  uint32_t m_data_offset;
+  uint32_t m_samplesnum;
+  uint32_t commandid;
+  uint16_t* length;
+  uint16_t* rx_pkt;
 
 
 
 // public methods
 public:
-  MsgData(uint8* received_packet_ptr);
-  void ParseHeader(uint32* rx_pkt, uint16* length);
-  void GetData(uint32* data_received, uint32* rx_pkt);
-  double getAngle();
-  unsigned short uncompand8to12(unsigned char b);
+  MsgData(uint8_t* received_packet_ptr);
+  void ParseHeader();
+  uint32_t GetDataLength();
+  void GetData(uint16_t* data_received, uint32_t received_buf_size);
+  double GetAngle();
+  uint16_t Uncompand8to12(uint8_t b);
 };
 }
