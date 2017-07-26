@@ -28,6 +28,16 @@ public:
 		stepping_time,
 		stepping_angle);
         int SetCommon(uint8_t* packet, uint32_t bufferLength);
+	void resetDefaults();
+	void resetDeviceDefaults();
+	void resetScanDefaults();
+	void applySettings();
+	void setSectorWidth(float sector_width);
+	uint16_t fromAngle(float angle);
+	float toAngle(uint16_t iangle);
+	Vector<Integer> getAllowableSteppingModes();
+	uint32_t getPingInterval(uint32_t baud_rate, uint16_t stepping_mode, uint16_t samples);
+	int setCommon(char* packet);
 private:
 	const uint32_t ping_interval[2][12][6] = 
 		    { { { 23,  23,  23,  23,  23,  23},

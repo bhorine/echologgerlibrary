@@ -135,9 +135,56 @@ int Command::SetCommon(char* packet) {
   return 1;
 }
 
+void Command::ResetToDefaults() {
+	ResetCommonSettings();
+	ResetScanSettings();
+}
+
+void Command::ResetCommonSettings() {
+  m_start_node = 1;
+  m_data_format = 0;
+  m_commandid = 0;
+  m_central_frequency = 0;
+  m_frequency_band = 0;
+  m_chirp_tone = 1;
+  m_pulse_length = 10;
+  m_ping_interval = 1;
+  m_samples = 240;
+  m_sample_frequency = 100000;
+  m_gain = 0;
+  m_tvg_slope = 0;
+  m_tvg_mode = 1;
+  m_tvg_time = 80;
+  m_sync = 0;
+  m_synch_timeout = 0;
+  m_tx_power = 0;
+  m_rms_tx_power = 0;
+}
+
+void Command::ResetScanSettings() {
+  m_sector_heading = 14400;
+  m_sector_width = 14400;
+  m_rotation_parameters = ROTATE_CW;
+  m_stepping_mode = 1;
+  m_stepping_time = 1;
+  m_stepping_angle = 0;
+}
+
+void Command::setSectorWidth(float sector_width) {
+	m_sector_width = fromAngle(sector_width);
+}
+
+uint16_t Command::fromAngle(float angle) {
+	return (uint16_t)(round(28800*angle/360));
+}
+
+float Command::toAngle(uint16_t iangle) {
+	return (360.0*(float)(iangle)/28800.0;
+}
 int Command::Check() {
 	return 0;
 }
+
 // Add check sequence to packet. Packet must already be allocated.
 uint8_t Command::AddCheck(char* packet, int packet_length, int buffer_length)
 {
