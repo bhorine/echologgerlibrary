@@ -26,6 +26,7 @@
 
 
 namespace elcc {
+  const unsigned int START_DELAY = 10000; // Delay 10 seconds after applying power to the sonar before trying to communicate with it.
 
 class CommControl {
 public:
@@ -35,6 +36,10 @@ public:
 	int connect();
 	//void write();
 	//void read();
+	int setScanParameters();
+	int setCommonParamters();
+	int readData();
+
 private:
 	int open_port(void);
 	int configure_port(int fd, int connect_mode);

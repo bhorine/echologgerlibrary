@@ -61,7 +61,7 @@ int CommControl::configure_port(int fd, int connect_state)
 int CommControl::autobaud(int fd)
 {
 	//Somewhere we should wait 10 seconds for startup
-	sleep(10000);
+	sleep(START_DELAY);
 	unsigned char autobaud_character[] = { '@' };
 	write(fd, autobaud_character, 1); // Send the autobaud character
 
@@ -103,5 +103,58 @@ int CommControl::connect() {
 	return (fd);
 }
 
+int CommControl::setScanParameters() {
+  int retval = 0;
+  Command cmd;
+  if ( cmd.SetScan(packet, buf_len, sectorScanHeading,
+	sectorWidth,
+	rotationDirection,
+	steppingMode,
+	steppingTime) == 0 ) {
+    int bytes_written = write(fd, packet, buf_len);
+    if (bytes_written != buf_len) {
+      retval = -2;
+    } else {
+      retval = 0;
+    }
+  } else {
+    retval = -1;
+  }    
+  return retval;
+}
 
+int CommControl::setCommonParameters(double sectorScanHeading,
+		double sectorWidth,
+		int rotationDirection,
+		int steppingMode,
+		int steppingTime) {
+  int retval = 0;
+  Command cmd;
+  uint8_t packet[88];
+  int buf_len = 88;
+  if ( cmd.SetCommon(packet, buf_len, commandid++,
+	chirp_tone,
+	pulse_length,
+	ping_interval,
+	num_samples,
+	gain ) == 0 ) {
+    int bytes_written = write(fd, packet, buf_len);
+    if (bytes_written != buf_len) {
+      retval = -2;
+    } else {
+      retval = 0;
+    }
+  } else {
+    retval = -1;
+  }    
+  return retval;
+}
+
+int CommControl::readData() {
+  Command cmd;
+  cmd.Start(packet, buf_len);
+  int bytes_written = write(fd, packet, buf_len);
+  
+  return 0;
+}
 } /* namespace elcc */

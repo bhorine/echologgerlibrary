@@ -19,7 +19,11 @@ Command::~Command() {
 	// TODO Auto-generated destructor stub
 }
 
-int Command::Start() {
+int Command::StartLength() {
+  return 5*4;
+}
+
+int Command::Start(uint8_t *  packet, int buflen) {
   common_packet[0] = CMD_MAGIC;
   common_packet[1] = 6;
   common_packet[2] = AddCheck(packet, packet_length, buffer_length);
@@ -30,7 +34,7 @@ int Command::Start() {
 }
 
 int Command::StopLength() {
-  return 5*8;
+  return 5*4;
 }
 
 int Command::Stop(uint8_t *packet, buffer_length) {
@@ -45,8 +49,11 @@ int Command::Stop(uint8_t *packet, buffer_length) {
   return 1;
 }
 
+int Command::ScanLength() {
+  return 7*4;
+}
 
-int Command::SetScan(uint8_t *packet, buffer_length, 
+int Command::SetScan(uint8_t *packet, uint buffer_length, 
 	double sectorScanHeading, 
 	double sectorWidth,
 	int rotationDirection,
@@ -128,11 +135,39 @@ uint32_t GetPingInterval(uint32_t baud_rate, uint16_t stepping_mode, uint16_t sa
   return ping_interval[(baud_rate == 115200)?0:1][row_index][col_index];
 }
 
-int Command::SetCommon(char* packet) {
+int Command::CommonLength() {
+  return 22*4;
+}
+
+int Command::SetCommon(uint8_t* packet, int buflen, uint32_t commandid) {
+  if ( chirp_tone > 2) {
+    cerr << "ERROR: Command::SetCommon " << "Chirp Tone must be 0 (tone), 1 (chirp FM), or 2 (chirp AFM)!" << endl;
+    return -2;
+  }
+  uint32 common_packet[21];
   common_packet[0] = CMD_MAGIC;
   common_packet[1] = 0;
   common_packet[2] = AddCheck(packet, packet_length, buffer_length);
-  return 1;
+  common_packet[3] = 1; // start node (fixed at 1)
+  common_packet[4] = 0; // (data format (fixed at 0)
+  common_packet[5] = commandid;
+  common_packet[6] = 0; // central frequency (fixed at 0)
+  common_packet[7] = 0; // Frequency Band (fixed at 0)
+  common_packet[8] = chirp_tone;
+  common_packet[9] = pulse_length;
+  common_packet[10] = ping_interval;
+  common_packet[11] = num_samples;
+  common_packet[12] = 100000; // Sample frequency (fixed at 100 kSPS)
+  common_packet[13] = gain;
+  common_packet[14] = 0; // tvg_slope (fixed at 0)
+  common_packet[15] = 1; // tvg_mode (fixed at 1)
+  common_packet[16] = 80; // tvg_time (fixed at 80)
+  common_packet[17] = 0; // sync (fixed at 0)
+  common_packet[18] = 0; // sync_timeout (fixed at 0)
+  common_packet[19] = 0; // tx_power (fixed at 0);
+  common_packet[20] = 0; // rms_tx_power (fixed at 0);
+  packet = (uint8_t*)common_packet;
+  return 0;
 }
 
 void Command::ResetToDefaults() {
