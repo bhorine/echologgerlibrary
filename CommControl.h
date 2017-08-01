@@ -40,7 +40,7 @@ public:
 	int setCommonParamters();
 	int readData();
 
-private:
+//private:
 	int open_port(void);
 	int configure_port(int fd, int connect_mode);
 	int autobaud(int fd);
