@@ -5,8 +5,10 @@
  *      Author: bhorine
  */
 
-#include "CommControl.h"
+//#include "Command.h"
+#include <cstdint>
 
+#include "CommControl.h"
 
 
 namespace elcc {
@@ -61,8 +63,11 @@ int CommControl::configure_port(int fd, int connect_state)
 int CommControl::autobaud(int fd)
 {
 	//Somewhere we should wait 10 seconds for startup
+        std::cout << "Wait 10 seconds before starting autobaud...";
 	sleep(START_DELAY);
+        std::cout << "done." << std::endl;
 	unsigned char autobaud_character[] = { '@' };
+	std::cout << "Sending autobaud character...";
 	write(fd, autobaud_character, 1); // Send the autobaud character
 
 	// Look for "#SYNC<LF>"
@@ -72,6 +77,7 @@ int CommControl::autobaud(int fd)
 		perror("CommControl::autobaud: Failed to sync");
 		return -1;
 	}
+	std::cout << "Got response (expecting #SYNC<LF>): " << response << std::endl;
 	char speed[] = CONNECTSPEED ;
 	write(fd, speed, 9);
 	read(fd, response, 4);
@@ -103,7 +109,7 @@ int CommControl::connect() {
 	return (fd);
 }
 
-int CommControl::setScanParameters() {
+/*int CommControl::setScanParameters() {
   int retval = 0;
   Command cmd;
   if ( cmd.SetScan(packet, buf_len, sectorScanHeading,
@@ -156,5 +162,5 @@ int CommControl::readData() {
   int bytes_written = write(fd, packet, buf_len);
   
   return 0;
-}
+}*/
 } /* namespace elcc */
