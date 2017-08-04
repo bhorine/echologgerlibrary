@@ -22,10 +22,11 @@ CommControl::~CommControl() {
 	// TODO Auto-generated destructor stub
 }
 
-int CommControl::open_port(void)
+int CommControl::open_port(char* port)
 {
 	int fd; // file descriptor for serial port
-	fd = open(TTYCONN, O_RDWR | O_NOCTTY | O_NDELAY);
+        
+	fd = open(port, O_RDWR | O_NOCTTY | O_NDELAY);
 	if(fd == -1) // if open is unsuccessful
 	{
 		perror("CommControl::connect: Unable to open port\n");
@@ -63,18 +64,23 @@ int CommControl::configure_port(int fd, int connect_state)
 int CommControl::autobaud(int fd)
 {
 	//Somewhere we should wait 10 seconds for startup
-        std::cout << "Wait 10 seconds before starting autobaud...";
+        std::cout << "Wait 10 seconds before starting autobaud..." << std::flush;
 	sleep(START_DELAY);
         std::cout << "done." << std::endl;
 	unsigned char autobaud_character[] = { '@' };
-	std::cout << "Sending autobaud character...";
+	std::cout << "Sending autobaud character..." << std::flush;
 	write(fd, autobaud_character, 1); // Send the autobaud character
 
 	// Look for "#SYNC<LF>"
 	char response[6];
-	read(fd, response, 6);
+	for (int i=0; i<6; i++) {
+	  read(fd, response + i, 1);
+          std::cout << std::hex << response[i] << std::flush;
+        }
+        std::cout << std::endl;
 	if (strcmp("#SYNC\n", response) != 0) {
 		perror("CommControl::autobaud: Failed to sync");
+		std::cout << "Response is: " << response << std::endl;
 		return -1;
 	}
 	std::cout << "Got response (expecting #SYNC<LF>): " << response << std::endl;
@@ -96,13 +102,16 @@ int CommControl::autobaud(int fd)
 	return fd;
 }
 
-int CommControl::connect() {
+int CommControl::connect(char* port) {
 	int fd;
-	fd = open_port();
+	std::cout << "Ready to open port" << std::endl;
+	fd = open_port(port);
 
 	if (fd > 0)
 	{
+		std::cout << "Ready to configure port" << std::endl;
 		fd = configure_port(fd, 0);
+		std::cout << "Ready to autobaud" << std::endl;
 		fd = autobaud(fd);
 	}
 

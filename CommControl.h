@@ -18,7 +18,6 @@
 #include <time.h>
 #include <iostream>
 
-#define TTYCONN "/dev/ttyS0"
 #define STARTSPEED "<230400\r>"
 #define STARTSPEEDSETTING B230400
 #define CONNECTSPEED "<2000000\n>"
@@ -26,22 +25,24 @@
 
 
 namespace elcc {
-  const unsigned int START_DELAY = 10000; // Delay 10 seconds after applying power to the sonar before trying to communicate with it.
+  const unsigned int START_DELAY = 10; // Delay 10 seconds after applying power to the sonar before trying to communicate with it.
 
 class CommControl {
 public:
 
 	CommControl();
 	virtual ~CommControl();
-	int connect();
+	int connect(char* port);
 	//void write();
 	//void read();
 	int setScanParameters();
 	int setCommonParamters();
 	int readData();
+   
 
 //private:
-	int open_port(void);
+//	char* m_port;
+	int open_port(char* port);
 	int configure_port(int fd, int connect_mode);
 	int autobaud(int fd);
 
