@@ -73,12 +73,25 @@ int CommControl::autobaud(int fd)
 
 	// Look for "#SYNC<LF>"
 	char response[6];
-	for (int i=0; i<6; i++) {
+	for (int k=0; k<100; k++) {
+          read(fd, response, 1);
+          if (response[0] == '#') {
+            std::cout << "Received #" << std::endl;
+            break;
+          } else {
+            std::cout << "k=" << std::dec << k << " received " << std::hex << (unsigned int)(response[0]) << std::endl;
+          }
+	}
+	if (response[0] != '#') {
+          std::cout << "Did not find correct character" << std::endl;
+	  return -1;
+        }
+	for (int i=1; i<6; i++) {
 	  read(fd, response + i, 1);
-          std::cout << std::hex << response[i] << std::flush;
+          std::cout << "Received 0x" << std::hex << (unsigned int)(response[i]) << std::flush;
         }
         std::cout << std::endl;
-	if (strcmp("#SYNC\n", response) != 0) {
+	if (strcmp("#SYNC\x10", response) != 0) {
 		perror("CommControl::autobaud: Failed to sync");
 		std::cout << "Response is: " << response << std::endl;
 		return -1;
@@ -87,7 +100,7 @@ int CommControl::autobaud(int fd)
 	char speed[] = CONNECTSPEED ;
 	write(fd, speed, 9);
 	read(fd, response, 4);
-	if (strcmp("#OK\n", response) != 0) {
+	if (strcmp("#OK\x13", response) != 0) {
 		perror("CommControl::autobaud: No first #OK seen.");
 		return -2;
 	}
