@@ -5,7 +5,7 @@
  *      Author: bhorine
  */
 
-//#include "Command.h"
+#include "Command.h"
 #include <cstdint>
 
 #include "CommControl.h"
@@ -13,9 +13,9 @@
 
 namespace elcc {
 
-CommControl::CommControl() {
-	// TODO Auto-generated constructor stub
-
+CommControl::CommControl(uint32_t baud_rate) {
+	m_baud_rate = baud_rate;
+	m_commandid = 0;
 }
 
 CommControl::~CommControl() {
@@ -73,7 +73,7 @@ int CommControl::autobaud(int fd)
 
 	// Look for "#SYNC<LF>"
 	char response[6];
-	for (int k=0; k<100; k++) {
+	for (int k=0; k<1000; k++) {
           read(fd, response, 1);
           if (response[0] == '#') {
             std::cout << "Received #" << std::endl;
@@ -131,14 +131,23 @@ int CommControl::connect(char* port) {
 	return (fd);
 }
 
-/*int CommControl::setScanParameters() {
+int CommControl::setScanParameters(double sectorScanHeading,
+		double sectorWidth,
+		int rotationDirection,
+		int steppingMode,
+		int steppingTime,
+		uint32_t numSamples) {
   int retval = 0;
-  Command cmd;
-  if ( cmd.SetScan(packet, buf_len, sectorScanHeading,
+  Command cmd(m_baud_rate);
+  uint8_t packet[100];
+  int fd;
+  int buf_len = cmd.ScanLength();
+  if ( cmd.SetScan(packet, 100, buf_len, sectorScanHeading,
 	sectorWidth,
 	rotationDirection,
 	steppingMode,
-	steppingTime) == 0 ) {
+	steppingTime,
+	numSamples) == 0 ) {
     int bytes_written = write(fd, packet, buf_len);
     if (bytes_written != buf_len) {
       retval = -2;
@@ -151,21 +160,21 @@ int CommControl::connect(char* port) {
   return retval;
 }
 
-int CommControl::setCommonParameters(double sectorScanHeading,
-		double sectorWidth,
-		int rotationDirection,
-		int steppingMode,
-		int steppingTime) {
+int CommControl::setCommonParameters(uint32_t chirp_tone,
+		uint32_t pulse_length,
+		uint32_t gain,
+		uint32_t num_samples) {
   int retval = 0;
-  Command cmd;
+  Command cmd(m_baud_rate);
   uint8_t packet[88];
-  int buf_len = 88;
-  if ( cmd.SetCommon(packet, buf_len, commandid++,
+  int buf_len = cmd.CommonLength();
+  int fd;
+  if ( cmd.SetCommon(packet, 88, buf_len, m_commandid++,
 	chirp_tone,
 	pulse_length,
-	ping_interval,
-	num_samples,
-	gain ) == 0 ) {
+//	ping_interval,
+	gain,
+	num_samples) == 0 ) {
     int bytes_written = write(fd, packet, buf_len);
     if (bytes_written != buf_len) {
       retval = -2;
@@ -179,10 +188,14 @@ int CommControl::setCommonParameters(double sectorScanHeading,
 }
 
 int CommControl::readData() {
-  Command cmd;
-  cmd.Start(packet, buf_len);
-  int bytes_written = write(fd, packet, buf_len);
+  return readData(m_baud_rate);
+}
+
+int CommControl::readData(uint32_t baud_rate) {
+  Command cmd(baud_rate);
+//  cmd.Start(packet, buf_len);
+//  int bytes_written = write(fd, packet, buf_len);
   
   return 0;
-}*/
+}
 } /* namespace elcc */

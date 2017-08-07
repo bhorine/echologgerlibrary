@@ -30,22 +30,31 @@ namespace elcc {
 class CommControl {
 public:
 
-	CommControl();
+	CommControl(uint32_t baud_rate);
 	virtual ~CommControl();
 	int connect(char* port);
 	//void write();
 	//void read();
-	int setScanParameters();
-	int setCommonParamters();
-	int readData();
-   
+	int setScanParameters(double sectorScanHeading,
+				double sectorWidth,
+				int rotationDirection,
+				int steppingMode,
+				int steppingTime,
+				uint32_t numSamples);
+	int setCommonParameters(uint32_t chirp_tone,
+		uint32_t pulse_length,
+		uint32_t gain,
+		uint32_t num_samples);
+	int readData(uint32_t baud_rate);
+  	int readData(); 
 
 //private:
 //	char* m_port;
 	int open_port(char* port);
 	int configure_port(int fd, int connect_mode);
 	int autobaud(int fd);
-
+	uint32_t m_baud_rate;
+	uint32_t m_commandid;
 };
 
 } /* namespace elcc */
